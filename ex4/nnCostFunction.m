@@ -62,23 +62,54 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+y_recoded = zeros(size(y,1), num_labels);
+for index = 1:m
+    y_recoded(index, y(index)) = 1;
+endfor
 
+X = [ones(size(X, 1), 1) X];
+a_2 = sigmoid(X * Theta1');
+a_2 = [ones(size(a_2, 1), 1) a_2];
+a_3 = sigmoid(a_2 * Theta2');
 
+theta1_reg = Theta1;
+theta1_reg(:, [1]) = [];
+theta2_reg = Theta2;
+theta2_reg(:, [1]) = [];
+theta1_reg_sq = theta1_reg .^ 2;
+theta2_reg_sq = theta2_reg .^ 2;
 
+cf_vectrorized_difference = (-1 .* y_recoded .* log(a_3)) - (1 .- y_recoded) .* log(1 .- a_3); 
+cf_firt_term = (1/m)*sum(cf_vectrorized_difference(:));
+cf_second_term = (lambda/(2*m)) * (sum(theta1_reg_sq(:)) + sum(theta2_reg_sq(:)));
+J = cf_firt_term + cf_second_term;
 
+d_1_accum = zeros(size(Theta1_grad));
+d_2_accum = zeros(size(Theta2_grad));
 
+for t = 1:m
+    x_t = X(t,:);
+    y_t = y_recoded(t,:);
+    
+    z_2_t = Theta1 * x_t';
+    a_2_t = sigmoid(z_2_t);
+    a_2_t = [1; a_2_t];
 
+    a_3_t = sigmoid(Theta2 * a_2_t);
 
+    d_3_t = a_3_t .- y_t';
 
+    d_2_t = (Theta2(:,2:end)' * d_3_t) .* sigmoidGradient(z_2_t);
 
+    d_1_accum = d_1_accum + d_2_t * x_t;
+    d_2_accum = d_2_accum + d_3_t * a_2_t';
+endfor
 
+theta1_reg_grad = [zeros(size(theta1_reg, 1), 1) theta1_reg];
+theta2_reg_grad = [zeros(size(theta2_reg, 1), 1) theta2_reg];
 
-
-
-
-
-
-
+Theta1_grad = (d_1_accum ./ m) + (lambda / m) * theta1_reg_grad;
+Theta2_grad = (d_2_accum ./ m) + (lambda / m) * theta2_reg_grad;
 
 % -------------------------------------------------------------
 
@@ -86,6 +117,5 @@ Theta2_grad = zeros(size(Theta2));
 
 % Unroll gradients
 grad = [Theta1_grad(:) ; Theta2_grad(:)];
-
 
 end
